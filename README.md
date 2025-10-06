@@ -66,10 +66,6 @@ pip install -r requirements.txt
 
 ---
 
-Absolutely! Using **placeholders** in `config.json` makes it clear for other users exactly what they need to replace. I’ll rewrite the README sections for `config.json`, flair_map, and `praw.ini` to make it beginner-friendly.
-
----
-
 ## Configuration (`praw.ini` & `config.json`)
 
 ### 1. Create `praw.ini` for Reddit credentials
