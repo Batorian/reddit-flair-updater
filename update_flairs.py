@@ -1,29 +1,34 @@
 import praw
+import json
 import time
 
-# Initialize Reddit instance (reads from praw.ini)
-reddit = praw.Reddit("default")
-subreddit = reddit.subreddit("DispatchAdHoc")
+def main():
+    # --- Load configuration ---
+    try:
+        with open("config.json", "r") as f:
+            config = json.load(f)
+        subreddit_name = config.get("subreddit")
+        flair_map = config.get("flair_map", {})
+        if not subreddit_name:
+            raise ValueError("Subreddit name not found in config.json")
+        if not flair_map:
+            print("Warning: flair_map is empty in config.json")
+    except FileNotFoundError:
+        print("config.json not found! Please create it with your subreddit and flair_map.")
+        return
 
-# Map old flair text → new template ID
-flair_map = {
-    "News": "d373b1ba-5e7e-11f0-870e-22870e36641c",
-    "Discussion": "61220302-bbac-11ef-b53d-7aef208a0ad8",
-    "Art": "6e28f7e0-bbac-11ef-b9f4-16810934b5ba",
-    "Video": "79626ebc-c49d-11ef-8cea-8e895bdd6200",
-    "Meme": "f19b90cc-09bf-11f0-99c2-5ee939dc1e29",
-}
+    # --- Initialize Reddit ---
+    reddit = praw.Reddit("default")
+    subreddit = reddit.subreddit(subreddit_name)
 
-# List current flair templates
-print("Fetching flair templates...")
-for flair in subreddit.flair.link_templates:
-    print(f"{flair['text']} — {flair['id']}")
+    # --- Update posts ---
+    for submission in subreddit.new(limit=None):
+        old_flair = submission.link_flair_text
+        if old_flair in flair_map:
+            new_id = flair_map[old_flair]
+            submission.mod.flair(flair_template_id=new_id)
+            print(f"✅ Updated: {submission.title} → {old_flair}")
+            time.sleep(2)
 
-# Update posts
-for submission in subreddit.new(limit=10): # adjust limit as needed
-    old_flair = submission.link_flair_text
-    if old_flair in flair_map:
-        new_id = flair_map[old_flair]
-        submission.flair.select(new_id)
-        print(f"Updated: {submission.title}")
-        time.sleep(2)  # avoid rate limits
+if __name__ == "__main__":
+    main()
